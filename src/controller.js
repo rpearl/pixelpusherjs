@@ -19,7 +19,7 @@ export default class PixelPusher {
         this.updateVariables(broadcast);
 
         //network
-        const ip = broadcast.ip.toArray().map((octet) => octet.toString()).join('.');
+        const ip = broadcast.ip.map((octet) => octet.toString()).join('.');
         this.mac = macString(broadcast);
         this.ip = ip;
         this.port = broadcast.my_port || 9897;
@@ -51,10 +51,9 @@ export default class PixelPusher {
         const strips_in_packet = Math.min(this.max_strips_per_packet, this.strips.length);
 
         let packet = StripPacket(strips_in_packet, this.pixels_per_strip);
-        let buf = ref.alloc(packet);
+        packet.allocate();
 
-        let msg = new packet(buf);
-
+        let msg = packet.fields;
         msg.sequence_no = this.packet_number++;
 
         for(let strip_idx = 0; strip_idx < strips_in_packet; strip_idx++) {
@@ -66,7 +65,7 @@ export default class PixelPusher {
             }
         }
 
-        this.socket.send(buf, this.port, this.ip, (err) => {
+        this.socket.send(packet.buffer(), this.port, this.ip, (err) => {
             if (err)
                 console.log('error sending pixels');
         });
