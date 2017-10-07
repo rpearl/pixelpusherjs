@@ -60,7 +60,7 @@ export default class PixelPusher {
         for(let strip_idx = 0; strip_idx < strips_in_packet; strip_idx++) {
             const [strip, colorbuf] = this.strips.shift();
             // copy faster...
-            for (let i = 0; i < this.pixels_per_strip; i++) {
+            for (let i = 0; i < msg.strip_updates[strip_idx].pixel_data.length; i++) {
                 msg.strip_updates[strip_idx].strip_id = strip;
                 msg.strip_updates[strip_idx].pixel_data[i] = colorbuf[i];
             }
@@ -73,13 +73,16 @@ export default class PixelPusher {
     }
 
     sendloop() {
-        while (this.strips.length > 0) {
-            const start = process.hrtime();
-            this._sendPacket();
-            const [sec, ns] = process.hrtime(start);
-            const total_ms = (sec * 1e9 + ns) / 1000;
-            setTimeout(() => this.sendloop(), this.update_period - total_ms);
+
+        if (this.strips.length == 0) {
+            return;
         }
+
+        const start = process.hrtime();
+        this._sendPacket();
+        const [sec, ns] = process.hrtime(start);
+        const total_ms = (sec * 1e9 + ns) / 1000;
+        setTimeout(() => this.sendloop(), this.update_period - total_ms);
     }
 
     sync() {
